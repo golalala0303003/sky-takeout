@@ -104,4 +104,13 @@ public class EmployeeServiceImpl implements EmployeeService {
         return new PageResult(total,employees);
     }
 
+    public void status(Integer status,Long id) {
+        log.info("开始修改员工状态信息{}{}", status,id);
+        Employee employee = Employee.builder()
+                .id(id)
+                .status(status)
+                .build();
+        employeeMapper.update(employee);
+    }
+
 }

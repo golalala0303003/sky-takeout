@@ -81,14 +81,14 @@ public class EmployeeServiceImpl implements EmployeeService {
         employee.setPassword(DigestUtils.md5DigestAsHex(PasswordConstant.DEFAULT_PASSWORD.getBytes()));
 
         //设置时间
-        LocalDateTime now = LocalDateTime.now();
-        employee.setUpdateTime(now);
-        employee.setCreateTime(now);
+        //LocalDateTime now = LocalDateTime.now();
+        //employee.setUpdateTime(now);
+        //employee.setCreateTime(now);
 
         //设置创建用户
-        long currentId = BaseContext.getCurrentId();
-        employee.setCreateUser(currentId);
-        employee.setUpdateUser(currentId);
+        //long currentId = BaseContext.getCurrentId();
+        //employee.setCreateUser(currentId);
+        //employee.setUpdateUser(currentId);
         //TODO 改为当前登录的用户的id
         log.info("创建了一个新的实体{}", employee);
 
@@ -110,6 +110,22 @@ public class EmployeeServiceImpl implements EmployeeService {
                 .id(id)
                 .status(status)
                 .build();
+        employeeMapper.update(employee);
+    }
+
+    public Employee getEmployeeById(Long id) {
+        log.info("开始根据id查询员工{}",id);
+        Employee employee = employeeMapper.getById(id);
+        employee.setPassword("****");
+        return employee;
+    }
+
+    public void updateEmployee(EmployeeDTO employeeDTO) {
+        log.info("开始修改员工信息{}", employeeDTO);
+        Employee employee = new Employee();
+        BeanUtils.copyProperties(employeeDTO, employee);
+        //employee.setUpdateTime(LocalDateTime.now());
+        //employee.setUpdateUser(BaseContext.getCurrentId());
         employeeMapper.update(employee);
     }
 

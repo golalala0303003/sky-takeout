@@ -15,6 +15,7 @@ import com.sky.mapper.SetmealDishMapper;
 import com.sky.result.PageResult;
 import com.sky.service.DishService;
 import com.sky.vo.DishVO;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -22,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+@Slf4j
 @Service
 public class DishServiceImpl implements DishService {
 
@@ -73,13 +75,54 @@ public class DishServiceImpl implements DishService {
             throw new DeletionNotAllowedException(MessageConstant.DISH_BE_RELATED_BY_SETMEAL);
         }
 
-        //开始删除，删除菜品数据
+        /*开始删除，删除菜品数据
         for (Long id : ids) {
             dishMapper.deleteById(id);
             //删除口味数据
             dishFlavorMapper.deleteByDishId(id);
+        }*/
+
+        //优化删除逻辑，实现批量删除
+        dishMapper.deleteByIds(ids);
+        dishFlavorMapper.deleteByDishIds(ids);
+
+
+    }
+
+    public DishVO findById(Long id) {
+        Dish dish = dishMapper.getById(id);
+        List<DishFlavor> dishFlavor = dishFlavorMapper.getByDishId(id);
+        DishVO dishVO = new DishVO();
+        BeanUtils.copyProperties(dish, dishVO);
+        dishVO.setFlavors(dishFlavor);
+        return dishVO;
+    }
+
+
+    public void update(DishDTO dishDTO) {
+        log.info("现在开始修改dish{}",dishDTO);
+        Dish dish = new Dish();
+        BeanUtils.copyProperties(dishDTO, dish);
+        dishMapper.update(dish);
+
+
+        dishFlavorMapper.deleteByDishId(dish.getId());
+
+        List<DishFlavor> flavors = dishDTO.getFlavors();
+        if (flavors != null && flavors.size() > 0) {
+            flavors.forEach(dishFlavor -> {
+                dishFlavor.setDishId(dish.getId());
+            });
+            dishFlavorMapper.insertBatch(flavors);
         }
+    }
 
 
+    public void updateStatus(Integer status, Long id) {
+        Dish dish = Dish.builder()
+                .status(status)
+                .id(id)
+                .build();
+        dishMapper.update(dish);
     }
 }

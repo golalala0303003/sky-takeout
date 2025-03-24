@@ -125,4 +125,10 @@ public class DishServiceImpl implements DishService {
                 .build();
         dishMapper.update(dish);
     }
+
+    public List<Dish> findByCategoryId(Long id) {
+        return dishMapper.findByCategoryId(id);
+    }
+
+
 }

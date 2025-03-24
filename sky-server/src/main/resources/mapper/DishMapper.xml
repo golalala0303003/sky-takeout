@@ -23,6 +23,10 @@
         order by d.create_time desc
     </select>
 
+    <select id="findByCategoryId" resultType="com.sky.entity.Dish">
+        select * from dish where category_id = #{id}
+    </select>
+
     <delete id="deleteByIds">
         delete from dish where id in 
         <foreach collection="ids" open="(" close=")" separator="," item="id">

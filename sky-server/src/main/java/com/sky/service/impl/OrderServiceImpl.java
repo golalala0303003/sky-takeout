@@ -1,5 +1,6 @@
 package com.sky.service.impl;
 
+import com.alibaba.fastjson.JSON;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import com.github.xiaoymin.knife4j.core.util.CollectionUtils;
@@ -12,6 +13,7 @@ import com.sky.exception.OrderBusinessException;
 import com.sky.exception.ShoppingCartBusinessException;
 import com.sky.mapper.*;
 import com.sky.result.PageResult;
+import com.sky.server.WebSocketServer;
 import com.sky.service.OrderService;
 import com.sky.vo.OrderPaymentVO;
 import com.sky.vo.OrderStatisticsVO;
@@ -25,7 +27,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -43,6 +47,9 @@ public class OrderServiceImpl implements OrderService {
 
     @Autowired
     private ShoppingCartMapper shoppingCartMapper;
+
+    @Autowired
+    private WebSocketServer webSocketServer;
 
 
     @Override
@@ -98,6 +105,14 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public void paid(String orderNumber) {
         orderMapper.paidByOrderNumber(orderNumber);
+        Long orderId = orderMapper.getIdByNumber(orderNumber);
+        Map map = new HashMap();
+        map.put("type",1);//1提醒2催单
+        map.put("orderId",orderId);
+        map.put("content","订单号"+orderNumber);
+        String json = JSON.toJSONString(map);
+        log.info("已经收到了新的订单"+json);
+        webSocketServer.sendToAllClient(json);
     }
 
     @Override
@@ -303,6 +318,21 @@ public class OrderServiceImpl implements OrderService {
         orders.setDeliveryTime(LocalDateTime.now());
 
         orderMapper.update(orders);
+    }
+
+    @Override
+    public void reminder(Long id) {
+        Orders ordersDB = orderMapper.getById(id);
+        if(ordersDB == null || ordersDB.getStatus().equals(Orders.DELIVERY_IN_PROGRESS)) {
+            throw new OrderBusinessException(MessageConstant.ORDER_STATUS_ERROR);
+        }
+        Map map = new HashMap();
+        map.put("type",2);//1提醒2催单
+        map.put("orderId",id);
+        map.put("content","订单号"+ordersDB.getNumber());
+        String json = JSON.toJSONString(map);
+        log.info("已经知道了催单"+json);
+        webSocketServer.sendToAllClient(json);
     }
 
     private List<OrderVO> getOrderVOList(Page<Orders> page) {

@@ -36,4 +36,6 @@ public interface OrderMapper {
     Long getIdByNumber(String orderNumber);
 
     Double sumByMap(Map map);
+
+    Integer sumOrderByMap(Map map);
 }
